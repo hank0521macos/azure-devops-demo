@@ -53,4 +53,10 @@ public class SnakeGameController {
         return Collections.singletonMap("success", true);
     }
 
+    @GetMapping("/api/test")
+    @ResponseBody
+    public Map<String, String> testApi() {
+        return Collections.singletonMap("message", "API is working correctly");
+    }
+
 }
