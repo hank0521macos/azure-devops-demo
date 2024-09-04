@@ -1,0 +1,13 @@
+/target/
+/.settings/
+/.project
+/.classpath
+/bin/
+/node_modules/
+package.json
+package-lock.json
+/logs
+/.apt_generated/
+/.apt_generated_tests/
+# h2 trace log file
+testdb.trace.db

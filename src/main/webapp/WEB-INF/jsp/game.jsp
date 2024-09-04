@@ -1,0 +1,252 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Snake Game</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            border: 2px solid #333;
+            margin-top: 20px;
+            background-color: #fff;
+        }
+        #gameInfo {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #gameOver, #countdown {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 48px;
+        }
+        #restartButton, #backToMenuButton {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>貪吃蛇</h1>
+    <div id="playerInfo">玩家: ${playerName}</div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div id="gameInfo">分數: <span id="score">0</span></div>
+    <div id="gameOver">
+        <h2>Game Over!</h2>
+        <p>你的分數: <span id="finalScore"></span></p>
+        <button id="restartButton">重新開始</button>
+        <button id="backToMenuButton">回到主選單</button>
+    </div>
+    <div id="countdown"></div>
+
+    <script>
+        const playerName = "${playerName}";
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const gameOverElement = document.getElementById('gameOver');
+        const finalScoreElement = document.getElementById('finalScore');
+        const restartButton = document.getElementById('restartButton');
+        const backToMenuButton = document.getElementById('backToMenuButton');
+        const countdownElement = document.getElementById('countdown');
+
+        const scale = 20;
+        const rows = canvas.height / scale;
+        const columns = canvas.width / scale;
+
+        let snake;
+        let fruit;
+        let gameInterval;
+
+        function Snake() {
+            this.x = 200;
+            this.y = 200;
+            this.xSpeed = scale * 1;
+            this.ySpeed = 0;
+            this.total = 0;
+            this.tail = [];
+
+            this.draw = function() {
+                ctx.fillStyle = "#4CAF50";
+                for (let i = 0; i < this.tail.length; i++) {
+                    ctx.fillRect(this.tail[i].x, this.tail[i].y, scale, scale);
+                }
+                ctx.fillRect(this.x, this.y, scale, scale);
+            }
+
+            this.update = function() {
+                for (let i = 0; i < this.tail.length - 1; i++) {
+                    this.tail[i] = this.tail[i+1];
+                }
+
+                if (this.total >= 1) {
+                    this.tail[this.total - 1] = { x: this.x, y: this.y };
+                }
+
+                this.x += this.xSpeed;
+                this.y += this.ySpeed;
+
+                if (this.x > canvas.width - scale) {
+                    gameOver();
+                } else if (this.x < 0) {
+                    gameOver();
+                } else if (this.y > canvas.height - scale) {
+                    gameOver();
+                } else if (this.y < 0) {
+                    gameOver();
+                }
+            }
+
+            this.changeDirection = function(direction) {
+                switch(direction) {
+                    case 'Up':
+                        if (this.ySpeed !== scale * 1) {
+                            this.xSpeed = 0;
+                            this.ySpeed = -scale * 1;
+                        }
+                        break;
+                    case 'Down':
+                        if (this.ySpeed !== -scale * 1) {
+                            this.xSpeed = 0;
+                            this.ySpeed = scale * 1;
+                        }
+                        break;
+                    case 'Left':
+                        if (this.xSpeed !== scale * 1) {
+                            this.xSpeed = -scale * 1;
+                            this.ySpeed = 0;
+                        }
+                        break;
+                    case 'Right':
+                        if (this.xSpeed !== -scale * 1) {
+                            this.xSpeed = scale * 1;
+                            this.ySpeed = 0;
+                        }
+                        break;
+                }
+            }
+
+            this.eat = function(fruit) {
+                if (this.x === fruit.x && this.y === fruit.y) {
+                    this.total++;
+                    return true;
+                }
+                return false;
+            }
+
+            this.checkCollision = function() {
+                for (let i = 0; i < this.tail.length; i++) {
+                    if (this.x === this.tail[i].x && this.y === this.tail[i].y) {
+                        gameOver();
+                    }
+                }
+            }
+        }
+
+        function Fruit() {
+            this.x;
+            this.y;
+
+            this.pickLocation = function() {
+                this.x = (Math.floor(Math.random() * columns - 1) + 1) * scale;
+                this.y = (Math.floor(Math.random() * rows - 1) + 1) * scale;
+            }
+
+            this.draw = function() {
+                ctx.fillStyle = "#FF4136";
+                ctx.fillRect(this.x, this.y, scale, scale)
+            }
+        }
+
+        function gameOver() {
+            finalScoreElement.textContent = snake.total;
+            gameOverElement.style.display = 'block';
+            clearInterval(gameInterval);
+            saveScore(snake.total);
+        }
+
+        function saveScore(score) {
+            fetch('/saveScore', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ playerName: playerName, score: score }),
+            })
+            .then(response => response.json())
+            .then(data => console.log('Score saved:', data))
+            .catch((error) => console.error('Error:', error));
+        }
+
+        function restartGame() {
+            snake = new Snake();
+            fruit = new Fruit();
+            fruit.pickLocation();
+            gameOverElement.style.display = 'none';
+            startCountdown();
+        }
+
+        restartButton.addEventListener('click', restartGame);
+        backToMenuButton.addEventListener('click', () => window.location.href = '/');
+
+        function startCountdown() {
+            let count = 3;
+            countdownElement.style.display = 'block';
+            countdownElement.textContent = count;
+
+            const countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownElement.textContent = count;
+                } else if (count === 0) {
+                    countdownElement.textContent = '開始!';
+                } else {
+                    clearInterval(countdownInterval);
+                    countdownElement.style.display = 'none';
+                    startGame();
+                }
+            }, 1000);
+        }
+
+        function startGame() {
+            gameInterval = setInterval(() => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                fruit.draw();
+                snake.update();
+                snake.draw();
+
+                if (snake.eat(fruit)) {
+                    fruit.pickLocation();
+                }
+
+                snake.checkCollision();
+                scoreElement.textContent = snake.total;
+            }, 100);
+        }
+
+        window.addEventListener('keydown', ((evt) => {
+            const direction = evt.key.replace('Arrow', '');
+            snake.changeDirection(direction);
+        }));
+
+        restartGame();
+    </script>
+</body>
+</html>
