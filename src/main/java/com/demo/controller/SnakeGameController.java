@@ -24,6 +24,7 @@ public class SnakeGameController {
 
     @GetMapping("/")
     public String index() {
+        // TODO: Test Pipeline
         return "index";
     }
 
