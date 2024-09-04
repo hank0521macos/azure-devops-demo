@@ -72,7 +72,7 @@
     </dependencies>
 
     <build>
-        <finalName>snake-game-demo</finalName>
+        <finalName>azure-devops-demo</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
