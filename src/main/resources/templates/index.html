@@ -1,6 +1,5 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
-<html>
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <title>Snake Game - Welcome</title>
@@ -38,7 +37,7 @@
     </style>
 </head>
 <body>
-    <h1>貪吃狗拉拉</h1>
+    <h1>貪吃蛇</h1>
     <form action="/game" method="get">
         <input type="text" name="playerName" placeholder="輸入你的名字" required>
         <button type="submit">開始遊戲</button>
@@ -54,26 +53,16 @@
                 </tr>
             </thead>
             <tbody id="highScoresBody">
+                <tr th:each="score, iterStat : ${highScores}">
+                    <td th:text="${iterStat.index + 1}"></td>
+                    <td th:text="${score.playerName}"></td>
+                    <td th:text="${score.score}"></td>
+                </tr>
             </tbody>
         </table>
     </div>
     <button id="resetButton">重置排行榜</button>
     <script>
-        function loadHighScores() {
-            fetch('/highScores')
-                .then(response => response.json())
-                .then(scores => {
-                    const tbody = document.getElementById('highScoresBody');
-                    tbody.innerHTML = '';
-                    scores.forEach((score, index) => {
-                        const row = tbody.insertRow();
-                        row.insertCell(0).textContent = index + 1;
-                        row.insertCell(1).textContent = score.playerName;
-                        row.insertCell(2).textContent = score.score;
-                    });
-                });
-        }
-
         document.getElementById('resetButton').addEventListener('click', function() {
             if (confirm('確定要重置排行榜嗎？此操作不可撤銷。')) {
                 fetch('/resetHighScores', { method: 'POST' })
@@ -81,15 +70,13 @@
                     .then(result => {
                         if (result.success) {
                             alert('排行榜已重置');
-                            loadHighScores();
+                            location.reload(); // 重新加載頁面以刷新排行榜
                         } else {
                             alert('重置排行榜失敗');
                         }
                     });
             }
         });
-
-        loadHighScores();
     </script>
 </body>
 </html>

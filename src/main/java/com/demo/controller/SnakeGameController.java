@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.demo.dto.GameScore;
 import com.demo.service.SnakeGameService;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Controller
 public class SnakeGameController {
 
@@ -23,8 +26,9 @@ public class SnakeGameController {
     private SnakeGameService snakeGameService;
 
     @GetMapping("/")
-    public String index() {
-        // TODO: Test Pipeline 1
+    public String index(Model model) {
+        List<GameScore> highScores = snakeGameService.getHighScores();
+        model.addAttribute("highScores", highScores);
         return "index";
     }
 
@@ -37,6 +41,7 @@ public class SnakeGameController {
     @PostMapping("/saveScore")
     @ResponseBody
     public List<GameScore> saveScore(@RequestBody GameScore score) {
+        log.info("score = {}", score);
         return snakeGameService.saveScore(score);
     }
 
