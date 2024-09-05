@@ -6,7 +6,7 @@
     <groupId>com.fetnet.idtt</groupId>
     <artifactId>azure-devops-demo</artifactId>
     <version>0.1.0</version>
-    <packaging>war</packaging>
+    <packaging>jar</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
